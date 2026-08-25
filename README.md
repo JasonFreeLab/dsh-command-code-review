@@ -65,6 +65,17 @@ Users can disable or override the command from their own profile `cordis.patch.y
 - disable: command-code-review
 ```
 
+## Configuration
+
+- **Confidence threshold**: the workflow drops findings scored below 80. To change it, edit the `Filter out any issues with a score less than 80` line in `lib/index.js`.
+- **Review lenses**: the 5 parallel review lenses (dsh.md compliance, bug scan, git-history, prior-change comments, code-comment compliance) live in `lib/index.js`; add or remove lenses to fit your needs.
+
+## Troubleshooting
+
+- **No review comment posted**: the PR is closed, draft, trivial, or already reviewed; or no finding scored 80 or above.
+- **`gh` not found**: install and authenticate the GitHub CLI (`gh auth login`); only pull-request review needs it.
+- **Code links do not render**: use the full commit SHA and the `#L[start]-L[end]` line range.
+
 ## License
 
 MIT
