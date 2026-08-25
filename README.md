@@ -1,5 +1,7 @@
 # dsh-command-code-review
 
+> `/code-review` slash command for DeepSeek Harness — five parallel review lenses, per-finding confidence scoring, then a `gh` reply back on the pull request.
+
 `/code-review` slash command for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (dsh) — a self-contained plugin bundle that runs a full pull-request code review.
 
 English | [中文](#中文)
@@ -54,7 +56,7 @@ Type `/code-review` in the web composer, optionally followed by a PR number or U
 ```
 /code-review 123
 /code-review https://github.com/owner/repo/pull/123
-``
+```
 
 ## How it works
 
