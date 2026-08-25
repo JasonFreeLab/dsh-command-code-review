@@ -1,0 +1,6 @@
+# dsh bundle patch: mounts the /code-review command into a profile's layer stack.
+# The row id is stable, so users can disable or override it from their own
+# profile cordis.patch.yml (e.g. `- disable: command-code-review`).
+- insert:
+    - id: command-code-review
+      name: 'dsh-command-code-review'
