@@ -1,3 +1,4 @@
 # build artifacts
 *.tgz
 node_modules/
+dsh.md

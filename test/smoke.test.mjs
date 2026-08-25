@@ -22,12 +22,19 @@ test("cordis.patch.yml mounts the command", () => {
   assert.match(patch, /name: ['"]dsh-command-code-review['"]/);
 });
 
-test("lib/index.js registers the /code-review command", () => {
+test("lib/index.js registers /code-review with two modes", () => {
   const src = readFileSync(join(root, "lib/index.js"), "utf8");
   assert.match(src, /export const name = "command-code-review"/);
   assert.match(src, /export const inject = \["commands"\]/);
   assert.match(src, /name: "code-review"/);
   assert.match(src, /ctx\.commands\.register/);
+  // PR mode
+  assert.match(src, /const WORKFLOW_PR = /);
+  assert.match(src, /Target pull request: /);
+  // local mode + routing
+  assert.match(src, /const WORKFLOW_LOCAL = /);
+  assert.match(src, /function isPrTarget/);
+  assert.match(src, /Review request: /);
   assert.doesNotMatch(src, /anthropic|claude/i);
 });
 
