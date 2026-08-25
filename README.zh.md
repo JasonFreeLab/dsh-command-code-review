@@ -67,7 +67,13 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-0.1.1.tgz
 
 ## 配置
 
-- **置信度阈值**：工作流会丢弃低于 80 分的发现。要修改阈值，编辑 `lib/index.js` 里的 `Filter out any issues with a score less than 80` 那一行。
+- **置信度阈值**：工作流会丢弃低于阈值的发现（默认 80）。在你的 profile `cordis.patch.yml` 里覆盖：
+
+  ```yaml
+  - id: command-code-review
+    config:
+      threshold: 90
+  ```
 - **审查视角**：5 个并行审查视角（dsh.md 合规、bug 扫描、git 历史、历史改动评论、代码注释合规）都定义在 `lib/index.js` 里，可按需增删。
 
 ## 故障排查

@@ -35,6 +35,9 @@ test("lib/index.js registers /code-review with two modes", () => {
   assert.match(src, /const WORKFLOW_LOCAL = /);
   assert.match(src, /function isPrTarget/);
   assert.match(src, /Review request: /);
+  assert.match(src, /DEFAULT_THRESHOLD = 80/);
+  assert.match(src, /config\.threshold/);
+  assert.match(src, /renderWorkflow/);
   assert.doesNotMatch(src, /anthropic|claude/i);
 });
 

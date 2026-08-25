@@ -67,7 +67,13 @@ Users can disable or override the command from their own profile `cordis.patch.y
 
 ## Configuration
 
-- **Confidence threshold**: the workflow drops findings scored below 80. To change it, edit the `Filter out any issues with a score less than 80` line in `lib/index.js`.
+- **Confidence threshold**: the workflow drops findings scored below a threshold (default 80). Override it in your profile `cordis.patch.yml`:
+
+  ```yaml
+  - id: command-code-review
+    config:
+      threshold: 90
+  ```
 - **Review lenses**: the 5 parallel review lenses (dsh.md compliance, bug scan, git-history, prior-change comments, code-comment compliance) live in `lib/index.js`; add or remove lenses to fit your needs.
 
 ## Troubleshooting
