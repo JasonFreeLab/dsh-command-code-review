@@ -22,7 +22,7 @@ Both modes share the same core: collect relevant `dsh.md` guidance, launch 5 par
 
 ## Install
 
-From the npm registry (once published):
+From the npm registry:
 
 ```sh
 dsh plugin --profile web add dsh-command-code-review

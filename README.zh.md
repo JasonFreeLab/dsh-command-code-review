@@ -22,7 +22,7 @@
 
 ## 安装
 
-从 npm（发布后）：
+从 npm：
 
 ```sh
 dsh plugin --profile web add dsh-command-code-review
