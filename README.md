@@ -4,7 +4,7 @@
 
 `/code-review` slash command for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (dsh) — a self-contained plugin bundle that runs a full code review, either on a pull request or on local code.
 
-English | [中文](#中文)
+English | [中文](README.zh.md)
 
 ## What it does
 
@@ -68,25 +68,3 @@ Users can disable or override the command from their own profile `cordis.patch.y
 ## License
 
 MIT
-
-## 中文
-
-`/code-review`（代码审查）斜杠命令插件，支持两种模式：
-
-- `/code-review <PR 编号或链接>` —— 拉取请求审查（资格检查 → 5 个并行审查视角 → 置信度打分过滤 → 用 `gh` 回帖到 PR）。
-- `/code-review [审查需求]`（或留空）—— 本地代码审查：按需求审查指定范围，留空则审查当前未提交改动，结果直接在对话中输出（无需 `gh`）。
-
-安装（发布到 npm 后）：
-
-```sh
-dsh plugin --profile web add dsh-command-code-review
-```
-
-本地目录或 tarball：
-
-```sh
-dsh plugin --profile web add /path/to/dsh-command-code-review
-dsh plugin --profile web add /path/to/dsh-command-code-review-0.1.1.tgz
-```
-
-要求：基于 `@deepseek-ai/dsh-base` 的 dsh profile；`gh`（GitHub CLI）仅在审查 PR 时需要。
