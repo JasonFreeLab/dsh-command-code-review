@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.8] - 2026-08-26
+
+- The local workflow now reviews the entire repository when the request explicitly asks for the whole project, alongside empty-input (uncommitted changes) and named-scope reviews.
+
+## [0.1.7] - 2026-08-25
+
+- Removed Chinese from the workflow text; refreshed README/CHANGELOG/description for the 0.1.x feature set.
+
 ## [0.1.6] - 2026-08-25
 
 - The workflows now instruct the agent to await subagent completion notices instead of polling `list_agents`.

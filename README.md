@@ -11,7 +11,7 @@ English | [中文](README.zh.md)
 Registers one global slash command with two modes:
 
 - `/code-review <pr number|url>` — pull-request review (eligibility check → 5 parallel review lenses → per-finding confidence scoring → posts the result back to the PR with `gh`).
-- `/code-review [request]` (or empty) — local review of the requested scope (with no input it first probes the current branch for an open pull request and reviews that if one exists, otherwise the current uncommitted changes); reports findings directly in chat (no `gh` needed).
+- `/code-review [request]` (or empty) — local review of the requested scope (empty input probes the current branch's open PR first, then reviews the uncommitted changes; an explicit whole-project request reviews the entire repository; a named file/directory/module reviews exactly that scope); reports findings directly in chat (no `gh` needed).
 
 Both modes share the same core: collect relevant `dsh.md` guidance, launch 5 parallel review subagents (dsh.md adherence, shallow bug scan, git-history, prior-change comments, code-comment compliance), confidence-score each finding with a parallel subagent, and drop anything below the configured threshold (default 80).
 
@@ -48,6 +48,7 @@ Type `/code-review` in the web composer:
 /code-review 123                                  # review a pull request by number
 /code-review https://github.com/owner/repo/pull/123
 /code-review review src/auth                      # local review of a named scope
+/code-review review the whole project             # local review of the entire repository
 /code-review                                      # local review of the current uncommitted changes
 ```
 
