@@ -47,7 +47,7 @@ Type `/code-review` in the web composer:
 ```
 /code-review 123                                  # review a pull request by number
 /code-review https://github.com/owner/repo/pull/123
-/code-review 审查 src/auth 的改动                  # local review of a named scope
+/code-review review src/auth                      # local review of a named scope
 /code-review                                      # local review of the current uncommitted changes
 ```
 
