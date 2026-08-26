@@ -2,7 +2,19 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and versioning follows [Semantic Versioning](https://semver.org/).
 
-## [0.1.3] - unreleased
+## [0.1.6] - 2026-08-25
+
+- The workflows now instruct the agent to await subagent completion notices instead of polling `list_agents`.
+
+## [0.1.5] - 2026-08-25
+
+- The PR-probe now applies only when `/code-review` is invoked with no input; explicit review requests stay on the local workflow.
+
+## [0.1.4] - 2026-08-25
+
+- The confidence threshold is now configurable via `config.threshold` (default 80) in a profile's `cordis.patch.yml`.
+
+## [0.1.3] - 2026-08-25
 
 - Empty `/code-review` now auto-detects the current branch's open PR and reviews it before falling back to local review.
 

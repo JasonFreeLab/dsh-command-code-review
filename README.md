@@ -11,9 +11,9 @@ English | [中文](README.zh.md)
 Registers one global slash command with two modes:
 
 - `/code-review <pr number|url>` — pull-request review (eligibility check → 5 parallel review lenses → per-finding confidence scoring → posts the result back to the PR with `gh`).
-- `/code-review [request]` (or empty) — local review of the requested scope, or the current uncommitted changes when no scope is given; reports findings directly in chat (no `gh` needed).
+- `/code-review [request]` (or empty) — local review of the requested scope (with no input it first probes the current branch for an open pull request and reviews that if one exists, otherwise the current uncommitted changes); reports findings directly in chat (no `gh` needed).
 
-Both modes share the same core: collect relevant `dsh.md` guidance, launch 5 parallel review subagents (dsh.md adherence, shallow bug scan, git-history, prior-change comments, code-comment compliance), confidence-score each finding with a parallel subagent, and drop anything below 80.
+Both modes share the same core: collect relevant `dsh.md` guidance, launch 5 parallel review subagents (dsh.md adherence, shallow bug scan, git-history, prior-change comments, code-comment compliance), confidence-score each finding with a parallel subagent, and drop anything below the configured threshold (default 80).
 
 ## Requirements
 
@@ -35,7 +35,7 @@ From a local checkout or tarball:
 dsh plugin --profile web add /path/to/dsh-command-code-review
 
 # packed tarball
-dsh plugin --profile web add /path/to/dsh-command-code-review-0.1.1.tgz
+dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 ```
 
 The `dsh plugin add` command installs the package into the profile and, because its `package.json` declares `dsh.bundle`, appends it to `dsh.profile.bundles` automatically. Restart or re-boot the profile to pick it up.
@@ -57,7 +57,7 @@ The package is a standard dsh **bundle**:
 
 - `package.json` declares `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }`.
 - `cordis.patch.yml` inserts one plugin row (`id: command-code-review`) into the profile layer stack.
-- `lib/index.js` is a Cordis plugin that injects `commands` and registers the `code-review` command. The handler routes PR numbers/URLs to the pull-request workflow and everything else (including empty input) to the local-review workflow, then delivers it via `agent.followup`.
+- `lib/index.js` is a Cordis plugin that injects `commands` and registers the `code-review` command. The handler routes PR numbers/URLs to the pull-request workflow and everything else (including empty input) to the local-review workflow, then delivers it via `agent.followup`. The confidence threshold is configurable per profile (see Configuration), and the workflows tell the agent to await subagent completion notices rather than polling.
 
 Users can disable or override the command from their own profile `cordis.patch.yml`:
 

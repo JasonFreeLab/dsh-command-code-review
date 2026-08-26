@@ -1,6 +1,6 @@
 {
   "name": "dsh-command-code-review",
-  "description": "/code-review slash command for DeepSeek Harness — full pull-request review workflow as a DSH plugin",
+  "description": "/code-review slash command for DeepSeek Harness — multi-agent review of pull requests and local code, with configurable confidence scoring",
   "version": "0.1.6",
   "type": "module",
   "main": "lib/index.js",
