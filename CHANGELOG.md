@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.9] - 2026-08-28
+
+- Added release automation: publish to npm via trusted publishing and create a GitHub Release on tag push; fixed the CI workflow to install dependencies before testing.
+
 ## [0.1.8] - 2026-08-26
 
 - The local workflow now reviews the entire repository when the request explicitly asks for the whole project, alongside empty-input (uncommitted changes) and named-scope reviews.

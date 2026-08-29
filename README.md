@@ -1,19 +1,35 @@
 # dsh-command-code-review
 
-> `/code-review` slash command for DeepSeek Harness — five parallel review lenses, per-finding confidence scoring, for both pull requests and local code.
-
-`/code-review` slash command for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (dsh) — a self-contained plugin bundle that runs a full code review, either on a pull request or on local code.
-
 English | [中文](README.zh.md)
 
-## What it does
+[![npm version](https://img.shields.io/npm/v/dsh-command-code-review)](https://www.npmjs.com/package/dsh-command-code-review) [![GitHub release](https://img.shields.io/github/v/release/JasonFreeLab/dsh-command-code-review)](https://github.com/JasonFreeLab/dsh-command-code-review/releases) [![License](https://img.shields.io/npm/l/dsh-command-code-review)](./LICENSE)
 
-Registers one global slash command with two modes:
+A [DSH](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness) slash-command bundle that runs a full code review — five parallel review lenses with per-finding confidence scoring, for both pull requests and local code.
 
-- `/code-review <pr number|url>` — pull-request review (eligibility check → 5 parallel review lenses → per-finding confidence scoring → posts the result back to the PR with `gh`).
-- `/code-review [request]` (or empty) — local review of the requested scope (empty input probes the current branch's open PR first, then reviews the uncommitted changes; an explicit whole-project request reviews the entire repository; a named file/directory/module reviews exactly that scope); reports findings directly in chat (no `gh` needed).
+> `/code-review` slash command for DeepSeek Harness — self-contained plugin bundle, installable into any dsh profile.
 
-Both modes share the same core: collect relevant `dsh.md` guidance, launch 5 parallel review subagents (dsh.md adherence, shallow bug scan, git-history, prior-change comments, code-comment compliance), confidence-score each finding with a parallel subagent, and drop anything below the configured threshold (default 80).
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Install](#install)
+- [Usage](#usage)
+- [How it works](#how-it-works)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+- [Layout](#layout)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Features
+
+- **Two modes, one command** — `/code-review <pr number|url>` reviews a pull request; `/code-review [request]` (or empty) reviews local code.
+- **Five parallel review lenses** — dsh.md adherence, shallow bug scan, git-history, prior-change comments, and code-comment compliance.
+- **Per-finding confidence scoring** — a parallel subagent scores each finding; anything below the threshold is dropped (default 80).
+- **PR auto-reply** — pull-request results are posted back to the PR with `gh`; local results are reported in chat.
+- **Configurable** — the confidence threshold is set per profile (see [Configuration](#configuration)).
+- **Automated releases** — `release-please` (versioning + CHANGELOG + release notes) plus trusted publishing to npm.
 
 ## Requirements
 
@@ -42,7 +58,13 @@ The `dsh plugin add` command installs the package into the profile and, because 
 
 ## Usage
 
-Type `/code-review` in the web composer:
+### In the DSH web UI
+
+1. Start the web UI and open the printed URL: `dsh web` (alias of `dsh --profile web`).
+2. Start a new session and type `/code-review` in the composer. The command is registered automatically — no extra setup.
+3. For pull requests the result is posted back to the PR via `gh`; for local review, findings are reported directly in chat.
+
+### Examples
 
 ```
 /code-review 123                                  # review a pull request by number
@@ -51,6 +73,8 @@ Type `/code-review` in the web composer:
 /code-review review the whole project             # local review of the entire repository
 /code-review                                      # local review of the current uncommitted changes
 ```
+
+Empty input first probes the current branch's open PR, then falls back to reviewing uncommitted changes.
 
 ## How it works
 
@@ -82,6 +106,26 @@ Users can disable or override the command from their own profile `cordis.patch.y
 - **No review comment posted**: the PR is closed, draft, trivial, or already reviewed; or no finding scored 80 or above.
 - **`gh` not found**: install and authenticate the GitHub CLI (`gh auth login`); only pull-request review needs it.
 - **Code links do not render**: use the full commit SHA and the `#L[start]-L[end]` line range.
+
+## Layout
+
+```
+lib/index.js             # Cordis plugin that registers the /code-review command
+test/smoke.test.mjs      # smoke test
+cordis.patch.yml         # bundle patch
+.github/workflows/       # ci.yml + release.yml + release-please.yml
+```
+
+## Development
+
+```sh
+npm install
+npm test        # node --test smoke test
+```
+
+## Contributing
+
+Issues and pull requests are welcome.
 
 ## License
 
