@@ -29,6 +29,7 @@ A [DSH](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness) slas
 - **Per-finding confidence scoring** — a parallel subagent scores each finding; anything below the threshold is dropped (default 80).
 - **PR auto-reply** — pull-request results are posted back to the PR with `gh`; local results are reported in chat.
 - **Configurable** — the confidence threshold is set per profile (see [Configuration](#configuration)).
+- **Review report document** — local reviews are written as a structured Markdown report (in English) under `doc/` by default; override the directory with `--out <dir>` per invocation or `config.outputDir` per profile. The filename embeds the current HEAD's short sha (omitted outside a git repo).
 - **Automated releases** — `release-please` (versioning + CHANGELOG + release notes) plus trusted publishing to npm.
 
 ## Requirements
@@ -72,9 +73,13 @@ The `dsh plugin add` command installs the package into the profile and, because 
 /code-review review src/auth                      # local review of a named scope
 /code-review review the whole project             # local review of the entire repository
 /code-review                                      # local review of the current uncommitted changes
+/code-review review src/auth --out reports        # save the report under reports/
+/code-review --out docs review src/auth           # --out may come first or last
 ```
 
 Empty input first probes the current branch's open PR, then falls back to reviewing uncommitted changes.
+
+For local reviews, the report is also written to a Markdown document — under `doc/` by default, or wherever `--out <dir>` (or `config.outputDir`) points. The filename is `code-review-<sha7>-<slug>.md` in a git repo (`<sha7>` is the current HEAD's short sha, `<slug>` is derived from the review scope), and `code-review-<slug>.md` outside a git repo.
 
 ## How it works
 
@@ -99,6 +104,15 @@ Users can disable or override the command from their own profile `cordis.patch.y
     config:
       threshold: 90
   ```
+- **Report output directory**: where local-review reports are saved (default `doc`). Override per profile:
+
+  ```yaml
+  - id: command-code-review
+    config:
+      outputDir: reports
+  ```
+
+  or per invocation with `--out`: `/code-review --out reports review src/auth`.
 - **Review lenses**: the 5 parallel review lenses (dsh.md compliance, bug scan, git-history, prior-change comments, code-comment compliance) live in `lib/index.js`; add or remove lenses to fit your needs.
 
 ## Troubleshooting
@@ -111,7 +125,9 @@ Users can disable or override the command from their own profile `cordis.patch.y
 
 ```
 lib/index.js             # Cordis plugin that registers the /code-review command
+lib/parse.js             # invocation parsing (--out flag)
 test/smoke.test.mjs      # smoke test
+test/parse.test.mjs      # parser unit test
 cordis.patch.yml         # bundle patch
 .github/workflows/       # ci.yml + release.yml + release-please.yml
 ```
@@ -120,7 +136,7 @@ cordis.patch.yml         # bundle patch
 
 ```sh
 npm install
-npm test        # node --test smoke test
+npm test        # node --test (smoke + parser unit tests)
 ```
 
 ## Contributing

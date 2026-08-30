@@ -29,6 +29,7 @@
 - **逐发现置信度打分** —— 并行子代理对每条发现打分，低于阈值的丢弃（默认 80）。
 - **PR 自动回帖** —— 拉取请求结果用 `gh` 回帖到 PR；本地结果直接在对话中输出。
 - **可配置** —— 置信度阈值按 profile 配置（见「配置」）。
+- **审查报告文档** —— 本地审查完成后把结构化 Markdown 报告（内容为英文）写入文档，默认保存到 `doc/`；可用 `--out <目录>` 每次覆盖，或用 `config.outputDir` 按 profile 配置。文件名带当前 HEAD 后 7 位短 sha（非 git 仓库则省略）。
 - **自动化发布** —— `release-please`（版本 + CHANGELOG + Release 说明）+ npm 可信发布。
 
 ## 要求
@@ -72,9 +73,13 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 /code-review 审查 src/auth 的改动                  # 审查指定的范围
 /code-review 审查整个工程                          # 审查整个仓库
 /code-review                                      # 审查当前未提交的改动
+/code-review 审查 src/auth 的改动 --out reports    # 报告保存到 reports/
+/code-review --out docs 审查 src/auth 的改动       # --out 可放前也可放后
 ```
 
 留空时会先探测当前分支的拉取请求，存在则审查它，否则审查当前未提交改动。
+
+本地审查的报告还会写成 Markdown 文档 —— 默认保存到 `doc/`，或用 `--out <目录>`（或 `config.outputDir`）指定位置。git 仓库里文件名为 `code-review-<sha7>-<slug>.md`（`<sha7>` 为当前 HEAD 后 7 位短 sha，`<slug>` 由审查范围生成），非 git 仓库则为 `code-review-<slug>.md`。
 
 ## 工作原理
 
@@ -99,6 +104,15 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
     config:
       threshold: 90
   ```
+- **报告保存目录**：本地审查报告的保存目录（默认 `doc`）。按 profile 覆盖：
+
+  ```yaml
+  - id: command-code-review
+    config:
+      outputDir: reports
+  ```
+
+  或每次调用用 `--out` 覆盖：`/code-review --out reports 审查 src/auth 的改动`。
 - **审查视角**：5 个并行审查视角（dsh.md 合规、bug 扫描、git 历史、历史改动评论、代码注释合规）都定义在 `lib/index.js` 里，可按需增删。
 
 ## 故障排查
@@ -111,7 +125,9 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 
 ```
 lib/index.js             # 注册 /code-review 命令的 Cordis 插件
+lib/parse.js             # 输入解析（--out 参数）
 test/smoke.test.mjs      # 冒烟测试
+test/parse.test.mjs      # 解析器单元测试
 cordis.patch.yml         # bundle patch
 .github/workflows/       # ci.yml + release.yml + release-please.yml
 ```
@@ -120,7 +136,7 @@ cordis.patch.yml         # bundle patch
 
 ```sh
 npm install
-npm test        # node --test 冒烟测试
+npm test        # node --test（冒烟 + 解析器单元测试）
 ```
 
 ## 贡献

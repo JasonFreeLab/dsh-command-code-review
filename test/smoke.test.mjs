@@ -41,6 +41,20 @@ test("lib/index.js registers /code-review with two modes", () => {
   assert.doesNotMatch(src, /anthropic|claude/i);
 });
 
+test("lib/index.js defines a report template and document output", () => {
+  const src = readFileSync(join(root, "lib/index.js"), "utf8");
+  assert.match(src, /const REPORT_TEMPLATE = /);
+  assert.match(src, /REPORT_OUTPUT_DIR/);
+  assert.match(src, /config\.outputDir/);
+  assert.match(src, /git rev-parse --short HEAD/);
+  assert.match(src, /code-review-<sha7>-<slug>\.md/);
+  assert.match(src, /code-review-<slug>\.md/);
+  assert.match(src, /mkdir -p/);
+  assert.match(src, /Write the review report to a markdown document in English/);
+  assert.match(src, /parseInvocation/);
+  assert.match(src, /--out/);
+});
+
 test("every file listed in package.json files exists", () => {
   const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
   for (const f of pkg.files) {
