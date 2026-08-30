@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.2.0](https://github.com/JasonFreeLab/dsh-command-code-review/compare/v0.1.9...v0.2.0) (2026-08-30)
+
+
+### Features
+
+* write local review report to a markdown document ([2468a0a](https://github.com/JasonFreeLab/dsh-command-code-review/commit/2468a0a2f91d9d287a55cdb72507e0f72fe6e2d9))
+
 ## [0.1.9] - 2026-08-28
 
 - Added release automation: publish to npm via trusted publishing and create a GitHub Release on tag push; fixed the CI workflow to install dependencies before testing.
