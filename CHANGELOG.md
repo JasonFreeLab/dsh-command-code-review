@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.3.0](https://github.com/JasonFreeLab/dsh-command-code-review/compare/v0.2.0...v0.3.0) (2026-08-31)
+
+
+### Features
+
+* configurable review lenses with severity scoring and JSON output ([8cbe988](https://github.com/JasonFreeLab/dsh-command-code-review/commit/8cbe988203e33aab0be16154d975522754bc2079))
+
 ## [0.2.0](https://github.com/JasonFreeLab/dsh-command-code-review/compare/v0.1.9...v0.2.0) (2026-08-30)
 
 
