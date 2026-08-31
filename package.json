@@ -16,7 +16,7 @@
     "url": "https://github.com/JasonFreeLab/dsh-command-code-review/issues"
   },
   "engines": {
-    "node": "^22.19.0 || >=24.0.0"
+    "node": ">=20"
   },
   "keywords": [
     "deepseek",
