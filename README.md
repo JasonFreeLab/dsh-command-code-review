@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 [![npm version](https://img.shields.io/npm/v/dsh-command-code-review)](https://www.npmjs.com/package/dsh-command-code-review) [![GitHub release](https://img.shields.io/github/v/release/JasonFreeLab/dsh-command-code-review)](https://github.com/JasonFreeLab/dsh-command-code-review/releases) [![License](https://img.shields.io/npm/l/dsh-command-code-review)](./LICENSE)
 
-A [DSH](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness) slash-command bundle that runs a full code review — five parallel review lenses with per-finding confidence scoring, for both pull requests and local code.
+A [DSH](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness) slash-command bundle that runs a full code review — configurable review lenses with per-finding confidence and severity scoring, for both pull requests and local code.
 
 > `/code-review` slash command for DeepSeek Harness — self-contained plugin bundle, installable into any dsh profile.
 
@@ -25,12 +25,11 @@ A [DSH](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness) slas
 ## Features
 
 - **Two modes, one command** — `/code-review <pr number|url>` reviews a pull request; `/code-review [request]` (or empty) reviews local code.
-- **Five parallel review lenses** — dsh.md adherence, shallow bug scan, git-history, prior-change comments, and code-comment compliance.
-- **Per-finding confidence scoring** — a parallel subagent scores each finding; anything below the threshold is dropped (default 80).
+- **Configurable review lenses** — five by default (dsh.md compliance, bug & correctness, historical context, security, code-comment compliance), plus an optional performance lens; choose a subset per profile.
+- **Confidence + severity scoring** — findings are deduplicated across lenses, then batch-scored for confidence (real vs false positive) and severity (blocker/major/minor/nit); anything below the threshold is dropped (default 80).
 - **PR auto-reply** — pull-request results are posted back to the PR with `gh`; local results are reported in chat.
 - **Configurable** — the confidence threshold is set per profile (see [Configuration](#configuration)).
-- **Review report document** — local reviews are written as a structured Markdown report (in English) under `doc/` by default; override the directory with `--out <dir>` per invocation or `config.outputDir` per profile. The filename embeds the current HEAD's short sha (omitted outside a git repo).
-- **Automated releases** — `release-please` (versioning + CHANGELOG + release notes) plus trusted publishing to npm.
+- **Review report document** — local reviews are written as a structured Markdown report (in English) plus a machine-readable JSON sidecar, under `doc/` by default; override the directory with `--out <dir>` per invocation or `config.outputDir` per profile. The filename embeds the current HEAD's short sha (omitted outside a git repo).
 
 ## Requirements
 
@@ -113,7 +112,14 @@ Users can disable or override the command from their own profile `cordis.patch.y
   ```
 
   or per invocation with `--out`: `/code-review --out reports review src/auth`.
-- **Review lenses**: the 5 parallel review lenses (dsh.md compliance, bug scan, git-history, prior-change comments, code-comment compliance) live in `lib/index.js`; add or remove lenses to fit your needs.
+- **Review lenses**: available lens ids are `dsh-md`, `bugs`, `history`, `security`, `comments`, and `perf`. The default set is `dsh-md`, `bugs`, `history`, `security`, `comments`. Choose a subset per profile:
+
+  ```yaml
+  - id: command-code-review
+    config:
+      lenses: [dsh-md, bugs, security]
+  ```
+- **Adaptive lenses**: with `autoLenses: true` (the default), the security lens is auto-enabled when the scope touches security-sensitive files and the performance lens when it touches hot paths — if they are not already enabled. Disable with `autoLenses: false`.
 
 ## Troubleshooting
 
@@ -125,9 +131,11 @@ Users can disable or override the command from their own profile `cordis.patch.y
 
 ```
 lib/index.js             # Cordis plugin that registers the /code-review command
+lib/lenses.js            # review-lens registry + resolution
 lib/parse.js             # invocation parsing (--out flag)
 test/smoke.test.mjs      # smoke test
 test/parse.test.mjs      # parser unit test
+test/lenses.test.mjs     # lens resolution unit test
 cordis.patch.yml         # bundle patch
 .github/workflows/       # ci.yml + release.yml + release-please.yml
 ```
@@ -136,7 +144,7 @@ cordis.patch.yml         # bundle patch
 
 ```sh
 npm install
-npm test        # node --test (smoke + parser unit tests)
+npm test        # node --test (smoke + parser + lens unit tests)
 ```
 
 ## Contributing

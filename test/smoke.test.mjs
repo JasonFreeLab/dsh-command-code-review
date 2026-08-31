@@ -29,10 +29,10 @@ test("lib/index.js registers /code-review with two modes", () => {
   assert.match(src, /name: "code-review"/);
   assert.match(src, /ctx\.commands\.register/);
   // PR mode
-  assert.match(src, /const WORKFLOW_PR = /);
+  assert.match(src, /function buildPrWorkflow/);
   assert.match(src, /Target pull request: /);
   // local mode + routing
-  assert.match(src, /const WORKFLOW_LOCAL = /);
+  assert.match(src, /function buildLocalWorkflow/);
   assert.match(src, /function isPrTarget/);
   assert.match(src, /Review request: /);
   assert.match(src, /DEFAULT_THRESHOLD = 80/);
@@ -53,6 +53,20 @@ test("lib/index.js defines a report template and document output", () => {
   assert.match(src, /Write the review report to a markdown document in English/);
   assert.match(src, /parseInvocation/);
   assert.match(src, /--out/);
+});
+
+test("lib/index.js drives lenses, severity, dedup, batch scoring, and JSON output", () => {
+  const src = readFileSync(join(root, "lib/index.js"), "utf8");
+  assert.match(src, /from "\.\/lenses\.js"/);
+  assert.match(src, /resolveLenses/);
+  assert.match(src, /resolveAutoLenses/);
+  assert.match(src, /renderLensList/);
+  assert.match(src, /SEVERITY_RUBRIC/);
+  assert.match(src, /blocker/);
+  assert.match(src, /Deduplicate/);
+  assert.match(src, /ONE scoring subagent/);
+  assert.match(src, /machine-readable/);
+  assert.match(src, /\.json/);
 });
 
 test("every file listed in package.json files exists", () => {

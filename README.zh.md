@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/dsh-command-code-review)](https://www.npmjs.com/package/dsh-command-code-review) [![GitHub release](https://img.shields.io/github/v/release/JasonFreeLab/dsh-command-code-review)](https://github.com/JasonFreeLab/dsh-command-code-review/releases) [![License](https://img.shields.io/npm/l/dsh-command-code-review)](./LICENSE)
 
-[DSH](https://github.com/deepseek-ai/deepseek-harness)（DeepSeek Harness）斜杠命令 bundle：一个 `/code-review` 命令即可对拉取请求或本地代码做完整代码审查 —— 五个并行审查视角、逐发现置信度打分。
+[DSH](https://github.com/deepseek-ai/deepseek-harness)（DeepSeek Harness）斜杠命令 bundle：一个 `/code-review` 命令即可对拉取请求或本地代码做完整代码审查 —— 可配置审查视角、逐发现置信度与严重度打分。
 
 > `/code-review` 斜杠命令插件：自包含 bundle，可安装到任意 dsh profile。
 
@@ -25,12 +25,11 @@
 ## 特性
 
 - **一个命令，两种模式** —— `/code-review <PR 编号|链接>` 审查拉取请求；`/code-review [需求]`（或留空）审查本地代码。
-- **五个并行审查视角** —— dsh.md 合规、浅层 bug 扫描、git 历史、历史改动评论、代码注释合规。
-- **逐发现置信度打分** —— 并行子代理对每条发现打分，低于阈值的丢弃（默认 80）。
+- **可配置审查视角** —— 默认五个（dsh.md 合规、bug/正确性、历史上下文、安全、代码注释合规），另有可选的性能视角；可按 profile 裁剪子集。
+- **置信度 + 严重度打分** —— 发现跨视角去重后批量打分：置信度（真伪）+ 严重度（blocker/major/minor/nit）；低于阈值的丢弃（默认 80）。
 - **PR 自动回帖** —— 拉取请求结果用 `gh` 回帖到 PR；本地结果直接在对话中输出。
 - **可配置** —— 置信度阈值按 profile 配置（见「配置」）。
-- **审查报告文档** —— 本地审查完成后把结构化 Markdown 报告（内容为英文）写入文档，默认保存到 `doc/`；可用 `--out <目录>` 每次覆盖，或用 `config.outputDir` 按 profile 配置。文件名带当前 HEAD 后 7 位短 sha（非 git 仓库则省略）。
-- **自动化发布** —— `release-please`（版本 + CHANGELOG + Release 说明）+ npm 可信发布。
+- **审查报告文档** —— 本地审查完成后把结构化 Markdown 报告（内容为英文）和一个机器可读 JSON 文件写入文档，默认保存到 `doc/`；可用 `--out <目录>` 每次覆盖，或用 `config.outputDir` 按 profile 配置。文件名带当前 HEAD 后 7 位短 sha（非 git 仓库则省略）。
 
 ## 要求
 
@@ -113,7 +112,14 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
   ```
 
   或每次调用用 `--out` 覆盖：`/code-review --out reports 审查 src/auth 的改动`。
-- **审查视角**：5 个并行审查视角（dsh.md 合规、bug 扫描、git 历史、历史改动评论、代码注释合规）都定义在 `lib/index.js` 里，可按需增删。
+- **审查视角**：可用视角 id 为 `dsh-md`、`bugs`、`history`、`security`、`comments`、`perf`。默认是 `dsh-md`、`bugs`、`history`、`security`、`comments`。按 profile 裁剪子集：
+
+  ```yaml
+  - id: command-code-review
+    config:
+      lenses: [dsh-md, bugs, security]
+  ```
+- **自适应视角**：`autoLenses: true`（默认）时，若审查范围命中安全敏感文件会自动启用安全视角，命中热路径会自动启用性能视角（若尚未启用）。用 `autoLenses: false` 关闭。
 
 ## 故障排查
 
@@ -125,9 +131,11 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 
 ```
 lib/index.js             # 注册 /code-review 命令的 Cordis 插件
+lib/lenses.js            # 审查视角注册表与解析
 lib/parse.js             # 输入解析（--out 参数）
 test/smoke.test.mjs      # 冒烟测试
 test/parse.test.mjs      # 解析器单元测试
+test/lenses.test.mjs     # 视角解析单元测试
 cordis.patch.yml         # bundle patch
 .github/workflows/       # ci.yml + release.yml + release-please.yml
 ```
@@ -136,7 +144,7 @@ cordis.patch.yml         # bundle patch
 
 ```sh
 npm install
-npm test        # node --test（冒烟 + 解析器单元测试）
+npm test        # node --test（冒烟 + 解析器 + 视角单元测试）
 ```
 
 ## 贡献
