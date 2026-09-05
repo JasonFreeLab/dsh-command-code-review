@@ -9,11 +9,13 @@ import {
 } from "../lib/lenses.js";
 
 test("default lens set is the five designed lenses, all registered", () => {
-  assert.deepEqual(DEFAULT_LENS_IDS, ["dsh-md", "bugs", "history", "security", "comments"]);
+  assert.deepEqual(DEFAULT_LENS_IDS, ["guidance", "bugs", "history", "security", "comments"]);
   for (const id of DEFAULT_LENS_IDS) {
     assert.ok(LENSES[id], `${id} should be registered`);
     assert.ok(LENSES[id].instruction, `${id} should have an instruction`);
   }
+  assert.match(LENSES.guidance.instruction, /AGENTS\.md/);
+  assert.match(LENSES.guidance.instruction, /CLAUDE\.md/);
 });
 
 test("resolveLenses returns defaults when not configured", () => {
@@ -24,7 +26,7 @@ test("resolveLenses returns defaults when not configured", () => {
 
 test("resolveLenses honors a configured subset, preserving order and dropping unknowns", () => {
   assert.deepEqual(resolveLenses({ lenses: ["bugs", "security"] }), ["bugs", "security"]);
-  assert.deepEqual(resolveLenses({ lenses: ["bugs", "nope", "bugs", "dsh-md"] }), ["bugs", "dsh-md"]);
+  assert.deepEqual(resolveLenses({ lenses: ["bugs", "nope", "bugs", "guidance"] }), ["bugs", "guidance"]);
 });
 
 test("resolveAutoLenses defaults to true", () => {
@@ -34,8 +36,8 @@ test("resolveAutoLenses defaults to true", () => {
 });
 
 test("partitionLenses splits core from contextual, preserving order", () => {
-  const { core, contextual } = partitionLenses(["dsh-md", "bugs", "history", "security", "comments"]);
-  assert.deepEqual(core, ["dsh-md", "bugs", "security"]);
+  const { core, contextual } = partitionLenses(["guidance", "bugs", "history", "security", "comments"]);
+  assert.deepEqual(core, ["guidance", "bugs", "security"]);
   assert.deepEqual(contextual, ["history", "comments"]);
 });
 

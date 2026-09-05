@@ -25,7 +25,7 @@ A [DSH](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness) slas
 ## Features
 
 - **Two modes, one command** — `/code-review <pr number|url>` reviews a pull request; `/code-review [request]` (or empty) reviews local code.
-- **Configurable review lenses** — five by default (dsh.md compliance, bug & correctness, historical context, security, code-comment compliance), plus an optional performance lens; choose a subset per profile.
+- **Configurable review lenses** — five by default (AGENTS.md/CLAUDE.md compliance, bug & correctness, historical context, security, code-comment compliance), plus an optional performance lens; choose a subset per profile.
 - **Confidence + severity scoring** — findings are deduplicated across lenses, then batch-scored for confidence (real vs false positive) and severity (blocker/major/minor/nit); anything below the threshold is dropped (default 80).
 - **PR auto-reply** — pull-request results are posted back to the PR with `gh`; local results are reported in chat.
 - **Configurable** — the confidence threshold is set per profile (see [Configuration](#configuration)).
@@ -112,12 +112,12 @@ Users can disable or override the command from their own profile `cordis.patch.y
   ```
 
   or per invocation with `--out`: `/code-review --out reports review src/auth`.
-- **Review lenses**: available lens ids are `dsh-md`, `bugs`, `history`, `security`, `comments`, and `perf`. The default set is `dsh-md`, `bugs`, `history`, `security`, `comments`. Choose a subset per profile:
+- **Review lenses**: available lens ids are `guidance`, `bugs`, `history`, `security`, `comments`, and `perf`. The default set is `guidance`, `bugs`, `history`, `security`, `comments`. Choose a subset per profile:
 
   ```yaml
   - id: command-code-review
     config:
-      lenses: [dsh-md, bugs, security]
+      lenses: [guidance, bugs, security]
   ```
 - **Adaptive lenses**: with `autoLenses: true` (the default), the security lens is auto-enabled when the scope touches security-sensitive files and the performance lens when it touches hot paths — if they are not already enabled. Disable with `autoLenses: false`.
 

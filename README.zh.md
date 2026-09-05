@@ -25,7 +25,7 @@
 ## 特性
 
 - **一个命令，两种模式** —— `/code-review <PR 编号|链接>` 审查拉取请求；`/code-review [需求]`（或留空）审查本地代码。
-- **可配置审查视角** —— 默认五个（dsh.md 合规、bug/正确性、历史上下文、安全、代码注释合规），另有可选的性能视角；可按 profile 裁剪子集。
+- **可配置审查视角** —— 默认五个（AGENTS.md/CLAUDE.md 合规、bug/正确性、历史上下文、安全、代码注释合规），另有可选的性能视角；可按 profile 裁剪子集。
 - **置信度 + 严重度打分** —— 发现跨视角去重后批量打分：置信度（真伪）+ 严重度（blocker/major/minor/nit）；低于阈值的丢弃（默认 80）。
 - **PR 自动回帖** —— 拉取请求结果用 `gh` 回帖到 PR；本地结果直接在对话中输出。
 - **可配置** —— 置信度阈值按 profile 配置（见「配置」）。
@@ -112,12 +112,12 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
   ```
 
   或每次调用用 `--out` 覆盖：`/code-review --out reports 审查 src/auth 的改动`。
-- **审查视角**：可用视角 id 为 `dsh-md`、`bugs`、`history`、`security`、`comments`、`perf`。默认是 `dsh-md`、`bugs`、`history`、`security`、`comments`。按 profile 裁剪子集：
+- **审查视角**：可用视角 id 为 `guidance`、`bugs`、`history`、`security`、`comments`、`perf`。默认是 `guidance`、`bugs`、`history`、`security`、`comments`。按 profile 裁剪子集：
 
   ```yaml
   - id: command-code-review
     config:
-      lenses: [dsh-md, bugs, security]
+      lenses: [guidance, bugs, security]
   ```
 - **自适应视角**：`autoLenses: true`（默认）时，若审查范围命中安全敏感文件会自动启用安全视角，命中热路径会自动启用性能视角（若尚未启用）。用 `autoLenses: false` 关闭。
 

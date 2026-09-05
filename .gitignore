@@ -1,4 +1,4 @@
 # build artifacts
 *.tgz
 node_modules/
-dsh.md
+AGENTS.md
