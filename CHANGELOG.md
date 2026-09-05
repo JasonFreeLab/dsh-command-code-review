@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.4.0](https://github.com/JasonFreeLab/dsh-command-code-review/compare/v0.3.0...v0.4.0) (2026-09-05)
+
+
+### Features
+
+* check AGENTS.md/CLAUDE.md guidance instead of dsh.md ([0057277](https://github.com/JasonFreeLab/dsh-command-code-review/commit/00572777507dd72a2b6d49c4f2323535c0764a00))
+
 ## [0.3.0](https://github.com/JasonFreeLab/dsh-command-code-review/compare/v0.2.0...v0.3.0) (2026-08-31)
 
 
