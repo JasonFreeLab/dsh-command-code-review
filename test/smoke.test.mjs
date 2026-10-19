@@ -14,6 +14,18 @@ test("package.json declares a dsh bundle", () => {
   assert.ok(pkg.files.includes("lib"));
   assert.ok(pkg.peerDependencies["@deepseek-ai/dsh-commands"]);
   assert.ok(pkg.peerDependencies["@deepseek-ai/dsh-llm"]);
+  assert.ok(pkg.peerDependencies["@deepseek-ai/schemastery"]);
+});
+
+test("package.json targets the dsh 0.2.x runtime", () => {
+  const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  // The dsh loader rejects a bundle whose engines.dsh (or dsh peer range) does
+  // not admit the running runtime.
+  assert.equal(pkg.engines.dsh, "^0.2.1-rc.2");
+  for (const [dependency, range] of Object.entries(pkg.peerDependencies)) {
+    if (dependency === "@deepseek-ai/cordis" || dependency === "@deepseek-ai/schemastery") continue;
+    assert.match(range, /^\^0\.2\.1-rc\.2$/, `${dependency} should target dsh 0.2.1`);
+  }
 });
 
 test("cordis.patch.yml mounts the command", () => {
@@ -39,6 +51,17 @@ test("lib/index.js registers /code-review with two modes", () => {
   assert.match(src, /config\.threshold/);
   assert.match(src, /renderWorkflow/);
   assert.doesNotMatch(src, /anthropic/i);
+});
+
+test("lib/index.js adapts to the dsh 0.2.x message and subagent contracts", () => {
+  const src = readFileSync(join(root, "lib/index.js"), "utf8");
+  // dsh 0.2 removed the shared `plugin` message source kind.
+  assert.match(src, /kind: "command-code-review"/);
+  assert.doesNotMatch(src, /kind: "plugin"/);
+  // dsh 0.2 subagent calls always run asynchronously; there is no such flag.
+  assert.doesNotMatch(src, /run_in_background/);
+  assert.match(src, /export const Config = Schema\.object/);
+  assert.match(src, /notifies you automatically/);
 });
 
 test("lib/index.js defines a report template and document output", () => {

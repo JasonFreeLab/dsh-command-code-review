@@ -30,10 +30,12 @@
 - **PR 自动回帖** —— 拉取请求结果用 `gh` 回帖到 PR；本地结果直接在对话中输出。
 - **可配置** —— 置信度阈值按 profile 配置（见「配置」）。
 - **审查报告文档** —— 本地审查完成后把结构化 Markdown 报告（内容为英文）和一个机器可读 JSON 文件写入文档，默认保存到 `doc/`；可用 `--out <目录>` 每次覆盖，或用 `config.outputDir` 按 profile 配置。文件名带当前 HEAD 后 7 位短 sha（非 git 仓库则省略）。
+- **跟进当前 dsh 运行时** —— 本 bundle 面向 dsh `0.2.x` 插件 API：`engines.dsh` 兼容性元数据、导出的 schemastery `Config` schema、插件自定义的消息 source kind，以及异步子代理工具契约。
 
 ## 要求
 
-- 基于 `@deepseek-ai/dsh-base` 的 dsh profile（所有内置 profile 都满足），它提供 `commands` 服务以及工作流用到的子代理 / bash / todo 工具。
+- dsh `0.2.x` 运行时 —— `^0.2.1-rc.2`，已在 `engines.dsh` 中声明。dsh loader 会在安装插件和启动 profile 时校验该范围；不兼容的 bundle 会被跳过，除非用户显式授予精确版本豁免。
+- 基于 `@deepseek-ai/dsh-base` 的 dsh profile（内置的 `web`、`headless`、`sdk`、`acp` profile；`sdk-minimal` 是独立树，不含 `commands` 服务），它提供 `commands` 服务以及工作流用到的子代理 / bash / todo 工具。
 - [GitHub CLI](https://cli.github.com)（`gh`）已安装并认证 —— 仅在拉取请求审查时需要。本地审查无需 `gh`。
 
 ## 安装
@@ -54,7 +56,7 @@ dsh plugin --profile web add /path/to/dsh-command-code-review
 dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 ```
 
-`dsh plugin add` 会把包装进 profile，并且因为它的 `package.json` 声明了 `dsh.bundle`，会自动追加到 `dsh.profile.bundles`。重启或重新引导 profile 后生效。
+`dsh plugin add` 会把包装进 profile，并且因为它的 `package.json` 声明了 `dsh.bundle`，会自动追加到 `dsh.profile.bundles`。安装时还会检查 bundle 的 dsh 要求（`engines.dsh`）；若声明了不兼容的运行时，请升级 dsh 或插件版本。重启或重新引导 profile 后生效。
 
 ## 使用
 
@@ -84,17 +86,20 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 
 这个包是一个标准的 dsh **bundle**：
 
-- `package.json` 声明 `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }`。
+- `package.json` 声明 `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }`，并用 `engines.dsh` 声明支持的运行时范围。
 - `cordis.patch.yml` 向 profile 层栈插入一行插件（`id: command-code-review`）。
-- `lib/index.js` 是一个 Cordis 插件，注入 `commands` 并注册 `code-review` 命令。handler 把 PR 编号 / URL 路由到拉取请求工作流，把其余输入（包括空输入）路由到本地审查工作流，再通过 `agent.followup` 投递。置信度阈值可配置（见「配置」），工作流会指示代理等待子代理完成通知而不是轮询。
+- `lib/index.js` 是一个 Cordis 插件，注入 `commands` 并注册 `code-review` 命令。它导出 schemastery `Config` schema（profile 配置在加载时校验），handler 把 PR 编号 / URL 路由到拉取请求工作流，把其余输入（包括空输入）路由到本地审查工作流，再通过 `agent.followup` 以 `notice` 用户消息投递，消息 source kind 为本插件自己的 `command-code-review`。工作流会指示代理并行启动子代理，并等待运行时的完成通知而不是轮询；dsh 0.2.x 的 `subagent` 工具始终异步执行，因此不再使用后台标志。
 
 用户可以在自己的 profile `cordis.patch.yml` 里禁用或覆盖该命令：
 
 ```yaml
-- disable: command-code-review
+- id: command-code-review
+  disabled: true
 ```
 
 ## 配置
+
+配置由导出的 `Config` schema 校验，非法值会让插件加载直接报错，而不是被静默忽略。
 
 - **置信度阈值**：工作流会丢弃低于阈值的发现（默认 80）。在你的 profile `cordis.patch.yml` 里覆盖：
 
@@ -123,6 +128,7 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 
 ## 故障排查
 
+- **提示 `Plugin dsh-command-code-review@… is incompatible with dsh …`**：当前 dsh 运行时不在本版本的 `engines.dsh` 范围内。请升级 dsh 到 `0.2.x` 或安装匹配的插件版本；仅作为最后手段，可授予精确版本豁免（`dsh plugin allow-version`）。
 - **PR 上没有回帖**：PR 已关闭 / 是 draft / 太简单 / 已审查过，或者没有发现达到 80 分。
 - **提示 gh 不存在**：安装并认证 GitHub CLI（`gh auth login`）；只有 PR 审查需要它。
 - **代码链接无法渲染**：必须用完整 commit SHA，以及 `#L[start]-L[end]` 行区间格式。
@@ -133,7 +139,8 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 lib/index.js             # 注册 /code-review 命令的 Cordis 插件
 lib/lenses.js            # 审查视角注册表与解析
 lib/parse.js             # 输入解析（--out 参数）
-test/smoke.test.mjs      # 冒烟测试
+test/smoke.test.mjs      # 包 / bundle 元数据冒烟测试
+test/plugin.test.mjs     # 命令注册与 handler 投递测试
 test/parse.test.mjs      # 解析器单元测试
 test/lenses.test.mjs     # 视角解析单元测试
 cordis.patch.yml         # bundle patch
@@ -144,8 +151,10 @@ cordis.patch.yml         # bundle patch
 
 ```sh
 npm install
-npm test        # node --test（冒烟 + 解析器 + 视角单元测试）
+npm test        # node --test（冒烟 + 插件 handler + 解析器 + 视角单元测试）
 ```
+
+插件 handler 测试会基于声明的 peer 依赖直接导入 `lib/index.js`，并把命令注册进真实的 `@deepseek-ai/dsh-commands` 运行时，因此覆盖真实的 `createUserMessage` / schemastery / 命令注册表路径。
 
 ## 贡献
 

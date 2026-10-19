@@ -30,10 +30,12 @@ A [DSH](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness) slas
 - **PR auto-reply** — pull-request results are posted back to the PR with `gh`; local results are reported in chat.
 - **Configurable** — the confidence threshold is set per profile (see [Configuration](#configuration)).
 - **Review report document** — local reviews are written as a structured Markdown report (in English) plus a machine-readable JSON sidecar, under `doc/` by default; override the directory with `--out <dir>` per invocation or `config.outputDir` per profile. The filename embeds the current HEAD's short sha (omitted outside a git repo).
+- **Tracks the current dsh runtime** — the bundle targets the dsh `0.2.x` plugin API: `engines.dsh` compatibility metadata, an exported schemastery `Config` schema, a producer-owned message source kind, and the asynchronous subagent tool contract.
 
 ## Requirements
 
-- A dsh profile built on `@deepseek-ai/dsh-base` (every shipped profile), which provides the `commands` service and the subagent/bash/todo tools the workflow uses.
+- A dsh `0.2.x` runtime — `^0.2.1-rc.2`, declared as `engines.dsh`. The dsh loader validates this range when the plugin is installed and when a profile boots; incompatible bundles are skipped unless the user grants an explicit exact-version exemption.
+- A dsh profile built on `@deepseek-ai/dsh-base` (the shipped `web`, `headless`, `sdk`, and `acp` profiles; `sdk-minimal` is a standalone tree and lacks the `commands` service), which provides the `commands` service and the subagent/bash/todo tools the workflow uses.
 - The [GitHub CLI](https://cli.github.com) (`gh`) on `PATH`, authenticated — required only for pull-request review. Local review needs no `gh`.
 
 ## Install
@@ -54,7 +56,7 @@ dsh plugin --profile web add /path/to/dsh-command-code-review
 dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 ```
 
-The `dsh plugin add` command installs the package into the profile and, because its `package.json` declares `dsh.bundle`, appends it to `dsh.profile.bundles` automatically. Restart or re-boot the profile to pick it up.
+The `dsh plugin add` command installs the package into the profile and, because its `package.json` declares `dsh.bundle`, appends it to `dsh.profile.bundles` automatically. The install also checks the bundle's dsh requirements (`engines.dsh`); if it names an incompatible runtime, upgrade either dsh or the plugin. Restart or re-boot the profile to pick it up.
 
 ## Usage
 
@@ -84,17 +86,20 @@ For local reviews, the report is also written to a Markdown document — under `
 
 The package is a standard dsh **bundle**:
 
-- `package.json` declares `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }`.
+- `package.json` declares `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }` and the supported runtime range in `engines.dsh`.
 - `cordis.patch.yml` inserts one plugin row (`id: command-code-review`) into the profile layer stack.
-- `lib/index.js` is a Cordis plugin that injects `commands` and registers the `code-review` command. The handler routes PR numbers/URLs to the pull-request workflow and everything else (including empty input) to the local-review workflow, then delivers it via `agent.followup`. The confidence threshold is configurable per profile (see Configuration), and the workflows tell the agent to await subagent completion notices rather than polling.
+- `lib/index.js` is a Cordis plugin that injects `commands` and registers the `code-review` command. It exports a schemastery `Config` schema (so profile configuration is validated at load time) and one `handler` that routes PR numbers/URLs to the pull-request workflow and everything else (including empty input) to the local-review workflow, then delivers the workflow through `agent.followup` as a `notice` user message carrying this plugin's own `command-code-review` source kind. The workflows tell the agent to launch subagents in parallel and await the runtime's completion notices rather than polling; the dsh 0.2.x `subagent` tool always runs asynchronously, so no background flag is used.
 
 Users can disable or override the command from their own profile `cordis.patch.yml`:
 
 ```yaml
-- disable: command-code-review
+- id: command-code-review
+  disabled: true
 ```
 
 ## Configuration
+
+Configuration is validated by the exported `Config` schema, so an invalid value fails the plugin load with a clear error instead of being silently ignored.
 
 - **Confidence threshold**: the workflow drops findings scored below a threshold (default 80). Override it in your profile `cordis.patch.yml`:
 
@@ -123,6 +128,7 @@ Users can disable or override the command from their own profile `cordis.patch.y
 
 ## Troubleshooting
 
+- **`Plugin dsh-command-code-review@… is incompatible with dsh …`**: the running dsh runtime is outside this version's `engines.dsh` range. Upgrade dsh to `0.2.x` or install a matching plugin version. Only as a last resort, grant the exact-version exemption (`dsh plugin allow-version`).
 - **No review comment posted**: the PR is closed, draft, trivial, or already reviewed; or no finding scored 80 or above.
 - **`gh` not found**: install and authenticate the GitHub CLI (`gh auth login`); only pull-request review needs it.
 - **Code links do not render**: use the full commit SHA and the `#L[start]-L[end]` line range.
@@ -133,7 +139,8 @@ Users can disable or override the command from their own profile `cordis.patch.y
 lib/index.js             # Cordis plugin that registers the /code-review command
 lib/lenses.js            # review-lens registry + resolution
 lib/parse.js             # invocation parsing (--out flag)
-test/smoke.test.mjs      # smoke test
+test/smoke.test.mjs      # package/bundle metadata smoke test
+test/plugin.test.mjs     # command registration + handler delivery test
 test/parse.test.mjs      # parser unit test
 test/lenses.test.mjs     # lens resolution unit test
 cordis.patch.yml         # bundle patch
@@ -144,8 +151,10 @@ cordis.patch.yml         # bundle patch
 
 ```sh
 npm install
-npm test        # node --test (smoke + parser + lens unit tests)
+npm test        # node --test (smoke + plugin handler + parser + lens unit tests)
 ```
+
+The plugin handler test imports `lib/index.js` against the declared peer dependencies and registers the command into a real `@deepseek-ai/dsh-commands` runtime, so it covers the real `createUserMessage`/schemastery/command-registry paths.
 
 ## Contributing
 
