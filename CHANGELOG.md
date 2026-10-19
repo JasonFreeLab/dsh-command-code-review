@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.5.0](https://github.com/JasonFreeLab/dsh-command-code-review/compare/v0.4.0...v0.5.0) (2026-10-19)
+
+
+### Features
+
+* adapt the bundle to dsh 0.2.1-rc.2 ([ca5bfaf](https://github.com/JasonFreeLab/dsh-command-code-review/commit/ca5bfaf51e9a3b8b0a05dd169b387e7d894a47d2))
+
 ## [0.4.0](https://github.com/JasonFreeLab/dsh-command-code-review/compare/v0.3.0...v0.4.0) (2026-09-05)
 
 
