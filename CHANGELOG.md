@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.6.0](https://github.com/JasonFreeLab/dsh-command-code-review/compare/v0.5.0...v0.6.0) (2026-11-18)
+
+
+### Features
+
+* upgrade to upstream claude/code-review and dsh 0.2.2 ([8a0c746](https://github.com/JasonFreeLab/dsh-command-code-review/commit/8a0c746121213610610df5a3516668edc5a38ff8))
+
 ## [0.5.0](https://github.com/JasonFreeLab/dsh-command-code-review/compare/v0.4.0...v0.5.0) (2026-10-19)
 
 
