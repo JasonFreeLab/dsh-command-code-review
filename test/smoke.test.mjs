@@ -21,11 +21,13 @@ test("package.json targets the dsh 0.2.x runtime", () => {
   const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
   // The dsh loader rejects a bundle whose engines.dsh (or dsh peer range) does
   // not admit the running runtime.
-  assert.equal(pkg.engines.dsh, "^0.2.1-rc.2");
+  assert.equal(pkg.engines.dsh, "^0.2.2-rc.4");
   for (const [dependency, range] of Object.entries(pkg.peerDependencies)) {
     if (dependency === "@deepseek-ai/cordis" || dependency === "@deepseek-ai/schemastery") continue;
-    assert.match(range, /^\^0\.2\.1-rc\.2$/, `${dependency} should target dsh 0.2.1`);
+    assert.match(range, /^\^0\.2\.2-rc\.4$/, `${dependency} should target dsh 0.2.2`);
   }
+  // The bundle targets the 0.2.x line, so the range must not admit 0.3.
+  assert.ok(!/0\.3/.test(pkg.engines.dsh));
 });
 
 test("cordis.patch.yml mounts the command", () => {
@@ -50,7 +52,7 @@ test("lib/index.js registers /code-review with two modes", () => {
   assert.match(src, /DEFAULT_THRESHOLD = 80/);
   assert.match(src, /config\.threshold/);
   assert.match(src, /renderWorkflow/);
-  assert.doesNotMatch(src, /anthropic/i);
+  assert.doesNotMatch(src, /claude-code|anthropic\.com/i);
 });
 
 test("lib/index.js adapts to the dsh 0.2.x message and subagent contracts", () => {

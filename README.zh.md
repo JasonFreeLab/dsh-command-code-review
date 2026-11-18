@@ -25,16 +25,19 @@
 ## 特性
 
 - **一个命令，两种模式** —— `/code-review <PR 编号|链接>` 审查拉取请求；`/code-review [需求]`（或留空）审查本地代码。
-- **可配置审查视角** —— 默认五个（AGENTS.md/CLAUDE.md 合规、bug/正确性、历史上下文、安全、代码注释合规），另有可选的性能视角；可按 profile 裁剪子集。
+- **默认在对话中输出，回帖需显式开启** —— 与上游 `claude/code-review` 一致：发现默认只在对话中报告；传 `--comment` 才把汇总回帖到 PR，传 `--inline` 再为每个已确认问题各留一条行内审查评论。
+- **先验证再打分** —— bug、安全与规范类发现会各派一个验证子代理（对应上游第 5 步），只有通过验证的发现才进入去重与打分；`--no-validate` 可跳过。
+- **只保留高信号问题** —— 审查代理只报告编译/解析失败、明确的逻辑错误，以及能引用原文的 AGENTS.md/CLAUDE.md 违规；风格与主观建议明确排除。
+- **可配置审查视角** —— 默认五个（AGENTS.md/CLAUDE.md 合规、bug/正确性、安全与逻辑、历史上下文、代码注释合规），另有可选的测试覆盖视角与性能视角；可按 profile 裁剪子集。
 - **置信度 + 严重度打分** —— 发现跨视角去重后批量打分：置信度（真伪）+ 严重度（blocker/major/minor/nit）；低于阈值的丢弃（默认 80）。
-- **PR 自动回帖** —— 拉取请求结果用 `gh` 回帖到 PR；本地结果直接在对话中输出。
 - **可配置** —— 置信度阈值按 profile 配置（见「配置」）。
 - **审查报告文档** —— 本地审查完成后把结构化 Markdown 报告（内容为英文）和一个机器可读 JSON 文件写入文档，默认保存到 `doc/`；可用 `--out <目录>` 每次覆盖，或用 `config.outputDir` 按 profile 配置。文件名带当前 HEAD 后 7 位短 sha（非 git 仓库则省略）。
 - **跟进当前 dsh 运行时** —— 本 bundle 面向 dsh `0.2.x` 插件 API：`engines.dsh` 兼容性元数据、导出的 schemastery `Config` schema、插件自定义的消息 source kind，以及异步子代理工具契约。
 
 ## 要求
 
-- dsh `0.2.x` 运行时 —— `^0.2.1-rc.2`，已在 `engines.dsh` 中声明。dsh loader 会在安装插件和启动 profile 时校验该范围；不兼容的 bundle 会被跳过，除非用户显式授予精确版本豁免。
+- dsh `0.2.x` 运行时 —— `^0.2.2-rc.4`，已在 `engines.dsh` 中声明，并已针对 dsh `0.2.2-rc.4` 验证。dsh loader 会在安装插件和启动 profile 时校验该范围；不兼容的 bundle 会被跳过，除非用户显式授予精确版本豁免。
+- Node.js `>=24.9.0`，与 dsh 0.2.2 自身要求的运行时一致。
 - 基于 `@deepseek-ai/dsh-base` 的 dsh profile（内置的 `web`、`headless`、`sdk`、`acp` profile；`sdk-minimal` 是独立树，不含 `commands` 服务），它提供 `commands` 服务以及工作流用到的子代理 / bash / todo 工具。
 - [GitHub CLI](https://cli.github.com)（`gh`）已安装并认证 —— 仅在拉取请求审查时需要。本地审查无需 `gh`。
 
@@ -64,14 +67,16 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 
 1. 启动 web 界面并打开打印出的地址：`dsh web`（即 `dsh --profile web`）。
 2. 新建会话，在输入框输入 `/code-review`。命令会自动注册，无需额外配置。
-3. 拉取请求的结果会用 `gh` 回帖到 PR；本地审查的结果直接在对话中输出。
+3. 发现直接在对话中报告。拉取请求可加 `--comment` 用 `gh` 回帖到 PR，再加 `--inline` 则为每个已确认问题各留一条行内评论。
 
 ### 示例
 
 ```
-/code-review 123                                  # 按编号审查一个拉取请求
+/code-review 123                                  # 按编号审查拉取请求，结果在对话中
+/code-review 123 --comment                        # 同时把汇总评论回帖到 PR
+/code-review 123 --comment --inline               # 再为每个问题留一条行内评论
 /code-review https://github.com/owner/repo/pull/123
-/code-review 审查 src/auth 的改动                  # 审查指定的范围
+/code-review 审查 src/auth 的改动 --no-report      # 本地审查，只在对话中输出（不写报告）
 /code-review 审查整个工程                          # 审查整个仓库
 /code-review                                      # 审查当前未提交的改动
 /code-review 审查 src/auth 的改动 --out reports    # 报告保存到 reports/
@@ -79,6 +84,8 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 ```
 
 留空时会先探测当前分支的拉取请求，存在则审查它，否则审查当前未提交改动。
+
+可用选项：`--comment`（把 PR 审查结果回帖）、`--inline`（行内评论，隐含 `--comment`）、`--out <目录>`（报告目录）、`--no-validate`（跳过验证步骤）、`--no-report`（不写报告文件）。
 
 本地审查的报告还会写成 Markdown 文档 —— 默认保存到 `doc/`，或用 `--out <目录>`（或 `config.outputDir`）指定位置。git 仓库里文件名为 `code-review-<sha7>-<slug>.md`（`<sha7>` 为当前 HEAD 后 7 位短 sha，`<slug>` 由审查范围生成），非 git 仓库则为 `code-review-<slug>.md`。
 
@@ -88,7 +95,7 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
 
 - `package.json` 声明 `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }`，并用 `engines.dsh` 声明支持的运行时范围。
 - `cordis.patch.yml` 向 profile 层栈插入一行插件（`id: command-code-review`）。
-- `lib/index.js` 是一个 Cordis 插件，注入 `commands` 并注册 `code-review` 命令。它导出 schemastery `Config` schema（profile 配置在加载时校验），handler 把 PR 编号 / URL 路由到拉取请求工作流，把其余输入（包括空输入）路由到本地审查工作流，再通过 `agent.followup` 以 `notice` 用户消息投递，消息 source kind 为本插件自己的 `command-code-review`。工作流会指示代理并行启动子代理，并等待运行时的完成通知而不是轮询；dsh 0.2.x 的 `subagent` 工具始终异步执行，因此不再使用后台标志。
+- `lib/index.js` 是一个 Cordis 插件，注入 `commands` 并注册 `code-review` 命令。它导出 schemastery `Config` schema（profile 配置在加载时校验），handler 把 PR 编号 / URL 路由到拉取请求工作流，把其余输入（包括空输入）路由到本地审查工作流，再通过 `agent.followup` 以 `notice` 用户消息投递，消息 source kind 为本插件自己的 `command-code-review`。工作流会指示代理并行启动子代理，并等待运行时的完成通知而不是轮询；dsh 0.2.x 的 `subagent` 工具始终异步执行、返回子代理名称，且没有后台标志。各个步骤编号按本次调用动态渲染，因此开启或跳过验证、回帖与报告时号码仍然连续。
 
 用户可以在自己的 profile `cordis.patch.yml` 里禁用或覆盖该命令：
 
@@ -117,19 +124,28 @@ dsh plugin --profile web add /path/to/dsh-command-code-review-<version>.tgz
   ```
 
   或每次调用用 `--out` 覆盖：`/code-review --out reports 审查 src/auth 的改动`。
-- **审查视角**：可用视角 id 为 `guidance`、`bugs`、`history`、`security`、`comments`、`perf`。默认是 `guidance`、`bugs`、`history`、`security`、`comments`。按 profile 裁剪子集：
+- **审查视角**：可用视角 id 为 `guidance`、`bugs`、`security`、`history`、`comments`，以及需显式启用的 `tests`、`perf`。默认是 `guidance`、`bugs`、`security`、`history`、`comments`。按 profile 裁剪子集：
 
   ```yaml
   - id: command-code-review
     config:
-      lenses: [guidance, bugs, security]
+      lenses: [guidance, bugs, security, tests]
   ```
-- **自适应视角**：`autoLenses: true`（默认）时，若审查范围命中安全敏感文件会自动启用安全视角，命中热路径会自动启用性能视角（若尚未启用）。用 `autoLenses: false` 关闭。
+- **自适应视角**：`autoLenses: true`（默认）时，若审查范围命中测试文件会自动启用测试覆盖视角，命中热路径自动启用性能视角，命中安全敏感文件自动启用安全视角（若尚未启用）。用 `autoLenses: false` 关闭。
+- **PR 回帖**：除非调用时传 `--comment`，否则发现只在对话中输出。可设 `postComment: true` 让回帖成为 profile 默认：
+
+  ```yaml
+  - id: command-code-review
+    config:
+      postComment: true
+  ```
+- **行内评论**：`--inline` 会通过 `gh api` 为每个已确认问题留一条行内审查评论。设 `inlineComments: false` 可即使传了 `--inline` 也不发。
 
 ## 故障排查
 
 - **提示 `Plugin dsh-command-code-review@… is incompatible with dsh …`**：当前 dsh 运行时不在本版本的 `engines.dsh` 范围内。请升级 dsh 到 `0.2.x` 或安装匹配的插件版本；仅作为最后手段，可授予精确版本豁免（`dsh plugin allow-version`）。
-- **PR 上没有回帖**：PR 已关闭 / 是 draft / 太简单 / 已审查过，或者没有发现达到 80 分。
+- **PR 上没有回帖**：没有传 `--comment`；或 PR 已关闭 / 是 draft / 太简单 / 已审查过，或者没有发现达到 80 分。
+- **没有行内评论**：`gh api` 需要带 `repo` 权限的 token；无法定位到具体行的问题会并入汇总评论。
 - **提示 gh 不存在**：安装并认证 GitHub CLI（`gh auth login`）；只有 PR 审查需要它。
 - **代码链接无法渲染**：必须用完整 commit SHA，以及 `#L[start]-L[end]` 行区间格式。
 

@@ -8,8 +8,8 @@ import {
   partitionLenses,
 } from "../lib/lenses.js";
 
-test("default lens set is the five designed lenses, all registered", () => {
-  assert.deepEqual(DEFAULT_LENS_IDS, ["guidance", "bugs", "history", "security", "comments"]);
+test("default lens set is every non-optional lens, all registered", () => {
+  assert.deepEqual(DEFAULT_LENS_IDS, ["guidance", "bugs", "security", "history", "comments"]);
   for (const id of DEFAULT_LENS_IDS) {
     assert.ok(LENSES[id], `${id} should be registered`);
     assert.ok(LENSES[id].instruction, `${id} should have an instruction`);
@@ -45,4 +45,20 @@ test("security and perf lenses expose trigger patterns for adaptive enablement",
   assert.ok(Array.isArray(LENSES.security.triggers) && LENSES.security.triggers.length > 0);
   assert.ok(Array.isArray(LENSES.perf.triggers) && LENSES.perf.triggers.length > 0);
   assert.ok(LENSES.perf.optional === true);
+});
+
+test("lenses declare their validation phase and optional membership", () => {
+  assert.deepEqual(
+    Object.entries(LENSES).filter(([, lens]) => lens.validate).map(([id]) => id),
+    ["guidance", "bugs", "security"],
+  );
+  for (const id of DEFAULT_LENS_IDS) {
+    assert.ok(!LENSES[id].optional, `${id} should not be optional`);
+  }
+  assert.equal(LENSES.tests.optional, true);
+  assert.ok(Array.isArray(LENSES.tests.triggers) && LENSES.tests.triggers.includes("test"));
+});
+
+test("resolveLenses accepts optional lenses explicitly", () => {
+  assert.deepEqual(resolveLenses({ lenses: ["bugs", "tests", "perf"] }), ["bugs", "tests", "perf"]);
 });
